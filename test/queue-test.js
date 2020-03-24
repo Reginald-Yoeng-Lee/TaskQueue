@@ -1,4 +1,4 @@
-const TaskQueue = require('../src/TaskQueue');
+const TaskQueue = require('../lib/TaskQueue');
 
 const taskQueue = new TaskQueue();
 
