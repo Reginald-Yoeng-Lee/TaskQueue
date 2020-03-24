@@ -1,5 +1,5 @@
 {
-  "name": "task-queue",
+  "name": "@reginaldlee/taskqueue",
   "version": "0.0.1",
   "description": "A js queue for tasks runing sequently.",
   "main": "lib/TaskQueue.js",
