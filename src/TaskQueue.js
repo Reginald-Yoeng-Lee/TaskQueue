@@ -1,7 +1,7 @@
 const endPromiseResolvers = Symbol('hidePromiseResolver');
 const targetSymbol = Symbol('target');
 
-export default class TaskQueue {
+module.exports = class TaskQueue {
 
     constructor() {
         this.tasks = [];
