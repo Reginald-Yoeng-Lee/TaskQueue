@@ -133,4 +133,4 @@ module.exports = class TaskQueue {
     setDebug(isDebug) {
         this._debug = isDebug;
     }
-}
+};
