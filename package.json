@@ -1,0 +1,26 @@
+{
+  "name": "task-queue",
+  "version": "0.0.1",
+  "description": "A js queue for tasks runing sequently.",
+  "main": "lib/TaskQueue.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ReinaldLee/TaskQueue.git"
+  },
+  "keywords": [
+    "queue"
+  ],
+  "author": "ReginaldLee",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ReinaldLee/TaskQueue/issues"
+  },
+  "homepage": "https://github.com/ReinaldLee/TaskQueue#readme"
+}
