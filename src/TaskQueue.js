@@ -61,6 +61,11 @@ export default class TaskQueue {
             throw new Error(`invalid trigger action type ${typeof task}.`);
         }
 
+        if (typeof endPromise === 'number') {
+            priority = endPromise;
+            endPromise = null;
+        }
+
         this._insert(this.tasks, {task, endPromise}, priority);
 
         if (!this._running) {
