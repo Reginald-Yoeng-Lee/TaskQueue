@@ -92,7 +92,7 @@ module.exports = class TaskQueue {
         if (taskWrapper.endPromise instanceof Promise) {
             promise = taskWrapper.endPromise;
             // Find the end promise corresponding to this task and mark as running. Prevent another end promise of higher priority task adding before current end promise.
-            if (promise[targetSymbol] && Array.isArray(promise[targetSymbol][endPromiseResolvers]) && promise[targetSymbol][endPromiseResolvers] > 0) {
+            if (promise[targetSymbol] && Array.isArray(promise[targetSymbol][endPromiseResolvers]) && promise[targetSymbol][endPromiseResolvers].length > 0) {
                 const wrapper = promise[targetSymbol][endPromiseResolvers][0];
                 wrapper._running = true;
             }
