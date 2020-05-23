@@ -1,7 +1,7 @@
 {
   "name": "@reginaldlee/taskqueue",
   "version": "0.0.1",
-  "description": "A js queue for tasks runing sequently.",
+  "description": "A js queue for tasks running one by one.",
   "main": "lib/TaskQueue.js",
   "directories": {
     "lib": "lib",

@@ -21,6 +21,25 @@ taskQueue.addTaskWithTarget(target, () => {
         taskQueue.endTaskWithTarget(target);
 
         setTimeout(testAddTask, 2000);
+
+        taskQueue.pause();
+        taskQueue.pause();
+        taskQueue.pause(false);
+
+        setTimeout(() => {
+            console.log('resume 1');
+            taskQueue.resume();
+        }, 3000);
+
+        setTimeout(() => {
+            console.log('resume 2');
+            taskQueue.resume();
+        }, 4000);
+
+        setTimeout(() => {
+            console.log('resume 3');
+            taskQueue.resume(false);
+        }, 5000);
     }, 4000);
 }, 999);
 
