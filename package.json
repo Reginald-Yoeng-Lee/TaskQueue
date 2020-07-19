@@ -1,8 +1,9 @@
 {
   "name": "@reginaldlee/taskqueue",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A js queue for tasks running one by one.",
   "main": "lib/TaskQueue.js",
+  "types": "lib/TaskQueue.d.ts",
   "directories": {
     "lib": "lib",
     "test": "test"
@@ -22,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/ReinaldLee/TaskQueue/issues"
   },
-  "homepage": "https://github.com/ReinaldLee/TaskQueue#readme"
+  "homepage": "https://github.com/ReinaldLee/TaskQueue#readme",
+  "devDependencies": {
+    "typescript": "^3.9.7"
+  }
 }
