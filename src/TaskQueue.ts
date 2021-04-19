@@ -3,7 +3,7 @@ const targetSymbol = Symbol('target');
 
 class TaskQueue {
 
-    private readonly tasks: TaskWrapper[];
+    private readonly tasks: TaskWrapper<any>[];
 
     private paused: boolean;
     private pausedCount: number;
@@ -30,11 +30,11 @@ class TaskQueue {
      * @param task <function> The job needs to run in order.
      * @param priority <number> The task will be added into the queue before every tasks with smaller priorities.
      */
-    addTaskWithTarget(target: { [endPromiseResolvers]?: EndPromiseResolver[], [index: string]: any }, task: Task, priority = 0): void {
+    addTaskWithTarget(target: { [endPromiseResolvers]?: EndPromiseResolver[], [index: string]: any }, task: Task<any>, priority = 0): void {
         if (!target || typeof target !== 'object' && typeof target !== 'function') {
-            throw new Error(``)
+            throw new Error(`Target type ${typeof target} is invalid.`);
         }
-        const endPromise: WrappedPromise<void> = new Promise(resolve => {
+        const endPromise: WrappedPromise<any> = new Promise(resolve => {
             if (!target[endPromiseResolvers]) {
                 target[endPromiseResolvers] = [];
             }
@@ -58,8 +58,8 @@ class TaskQueue {
         }
     }
 
-    addTask(task: Task, endPromise?: Promise<any>): void;
-    addTask(task: Task, priority?: number): void;
+    addTask<Result>(task: Task<Result>, endPromise?: Promise<Result>): Promise<Result>;
+    addTask<Result>(task: Task<Result>, priority?: number): Promise<Result>;
     /**
      * Add task running one by one. Only if the endPromise passed resolved, or the task is done (if it returns promise
      * then until the promise resolved, else until the task returned), the task is considered finished and next task starts.
@@ -68,10 +68,11 @@ class TaskQueue {
      *                        finish until the promise returned from the task function is resolved if it returns a promise or the task function returned.
      * @param endPromise <Promise | null> If it's not null, the task will be finished while the promise resolved.
      * @param priority <number> The task will be added into the queue before every tasks with smaller priorities.
+     * @return Result The result produced by the task.
      */
-    addTask(task: Task, endPromise?: Promise<any>, priority?: number): void;
+    addTask<Result>(task: Task<Result>, endPromise?: Promise<Result>, priority?: number): Promise<Result>;
 
-    addTask(task: Task, endPromise?: Promise<any> | number, priority: number = 0): void {
+    addTask<Result>(task: Task<Result>, endPromise?: Promise<Result> | number, priority: number = 0): Promise<Result> {
         if (typeof task !== 'function') {
             throw new Error(`invalid trigger action type ${typeof task}.`);
         }
@@ -81,14 +82,24 @@ class TaskQueue {
             endPromise = undefined;
         }
 
-        TaskQueue.insert<TaskWrapper[], { task: Task, endPromise?: Promise<any> }>(this.tasks, {
+        let resolve, reject;
+        const result = endPromise || new Promise((res, rej) => {
+            resolve = res;
+            reject = rej;
+        });
+
+        TaskQueue.insert<TaskWrapper<Result>[], QueueElement<Result>>(this.tasks, {
             task,
             endPromise,
+            resolve,
+            reject,
         }, priority);
 
         if (!this.running) {
             this.run();
         }
+
+        return result;
     }
 
     private async run(): Promise<void> {
@@ -106,8 +117,14 @@ class TaskQueue {
         }
 
         const taskWrapper = this.tasks.shift();
-        const result = taskWrapper?.task();
-        let promise: WrappedPromise<void> | null = null;
+        let result: Promise<any>;
+        try {
+            const r = taskWrapper?.task();
+            result = r instanceof Promise ? r : Promise.resolve(r);
+        } catch (e) {
+            result = Promise.reject(e);
+        }
+        let promise: WrappedPromise<any>;
         if (taskWrapper?.endPromise instanceof Promise) {
             promise = taskWrapper.endPromise;
             const target: { [endPromiseResolvers]?: EndPromiseResolver[] } | undefined = promise[targetSymbol];
@@ -115,19 +132,21 @@ class TaskQueue {
             if (target && (target[endPromiseResolvers]?.length ?? 0) > 0) {
                 target[endPromiseResolvers]![0].running = true;
             }
-        } else if (result instanceof Promise) {
+        } else {
             promise = result;
         }
         try {
-            promise && await promise;
+            const value = await promise;
+            taskWrapper?.resolve?.(value);
         } catch (e) {
             this.debug && console.error(e);
+            taskWrapper?.reject?.(e);
         }
 
         this.run();
     }
 
-    private static insert<Queue extends Array<Item & QueueElement>, Item>(queue: Queue, originItem: Item, priority: number): void {
+    private static insert<Queue extends Array<Item & QueueElementProperty>, Item>(queue: Queue, originItem: Item, priority: number): void {
         for (let [i, wrapper] of queue.entries()) {
             if (!wrapper.running && wrapper.priority < priority) { // Only add after running wrapper.
                 queue.splice(i, 0, {...originItem, priority, running: false});
@@ -174,26 +193,32 @@ class TaskQueue {
     setDebug(isDebug: boolean): void {
         this.debug = isDebug;
     }
-};
+}
 
-export = TaskQueue;
+export default TaskQueue;
+export {TaskQueue};
 
-type Task = () => Promise<any> | any;
+type Task<Result> = () => Promise<Result> | Result;
 
-interface QueueElement {
+interface QueueElementProperty {
     priority: number;
     running: boolean;
 }
 
-interface EndPromiseResolver extends QueueElement {
+interface QueueElement<Result> {
+    task: Task<Result>;
+    endPromise?: WrappedPromise<Result>;
+    resolve?: (value: Result | PromiseLike<Result>) => void;
+    reject?: (reason?: any) => void;
+}
+
+interface EndPromiseResolver extends QueueElementProperty {
     resolve: (value: void | PromiseLike<void>) => void;
 }
 
-interface TaskWrapper extends QueueElement {
-    task: Task;
-    endPromise?: WrappedPromise<any>;
+interface TaskWrapper<Result> extends QueueElementProperty, QueueElement<Result> {
 }
 
-interface WrappedPromise<T> extends Promise<T> {
+interface WrappedPromise<Result> extends Promise<Result> {
     [targetSymbol]?: { [endPromiseResolvers]?: EndPromiseResolver[] };
 }
