@@ -1,15 +1,18 @@
 {
   "name": "@reginaldlee/taskqueue",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "A js queue for tasks running one by one.",
   "main": "lib/TaskQueue.js",
   "types": "lib/TaskQueue.d.ts",
   "directories": {
+    "src": "src",
     "lib": "lib",
     "test": "test"
   },
+  "files": ["lib"],
   "scripts": {
-    "test": "mocha --require ts-node/register --extension ts --recursive --timeout 30000 --parallel"
+    "test": "mocha",
+    "prepare": "tsc"
   },
   "repository": {
     "type": "git",

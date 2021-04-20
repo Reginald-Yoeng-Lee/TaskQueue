@@ -38,7 +38,7 @@ class TaskQueue {
             if (!target[endPromiseResolvers]) {
                 target[endPromiseResolvers] = [];
             }
-            TaskQueue.insert(target[endPromiseResolvers]!, {resolve}, priority);
+            this.insert(target[endPromiseResolvers]!, {resolve}, priority);
         });
         // keep the target object. Mark the resolver wrapper running while task started.
         endPromise[targetSymbol] = target;
@@ -58,8 +58,8 @@ class TaskQueue {
         }
     }
 
-    addTask<Result>(task: Task<Result>, endPromise?: Promise<Result>): Promise<Result>;
-    addTask<Result>(task: Task<Result>, priority?: number): Promise<Result>;
+    async addTask<Result>(task: Task<Result>, endPromise?: Promise<Result>): Promise<Result>;
+    async addTask<Result>(task: Task<Result>, priority?: number): Promise<Result>;
     /**
      * Add task running one by one. Only if the endPromise passed resolved, or the task is done (if it returns promise
      * then until the promise resolved, else until the task returned), the task is considered finished and next task starts.
@@ -70,9 +70,9 @@ class TaskQueue {
      * @param priority <number> The task will be added into the queue before every tasks with smaller priorities.
      * @return Result The result produced by the task.
      */
-    addTask<Result>(task: Task<Result>, endPromise?: Promise<Result>, priority?: number): Promise<Result>;
+    async addTask<Result>(task: Task<Result>, endPromise?: Promise<Result>, priority?: number): Promise<Result>;
 
-    addTask<Result>(task: Task<Result>, endPromise?: Promise<Result> | number, priority: number = 0): Promise<Result> {
+    async addTask<Result>(task: Task<Result>, endPromise?: Promise<Result> | number, priority: number = 0): Promise<Result> {
         if (typeof task !== 'function') {
             throw new Error(`invalid trigger action type ${typeof task}.`);
         }
@@ -88,7 +88,7 @@ class TaskQueue {
             reject = rej;
         });
 
-        TaskQueue.insert<TaskWrapper<Result>[], QueueElement<Result>>(this.tasks, {
+        this.insert<TaskWrapper<Result>[], QueueElement<Result>>(this.tasks, {
             task,
             endPromise,
             resolve,
@@ -143,10 +143,10 @@ class TaskQueue {
             taskWrapper?.reject?.(e);
         }
 
-        this.run();
+        setTimeout(() => this.run(), 0);
     }
 
-    private static insert<Queue extends Array<Item & QueueElementProperty>, Item>(queue: Queue, originItem: Item, priority: number): void {
+    protected insert<Queue extends Array<Item & QueueElementProperty>, Item>(queue: Queue, originItem: Item, priority: number): void {
         for (let [i, wrapper] of queue.entries()) {
             if (!wrapper.running && wrapper.priority < priority) { // Only add after running wrapper.
                 queue.splice(i, 0, {...originItem, priority, running: false});
@@ -196,7 +196,7 @@ class TaskQueue {
 }
 
 export default TaskQueue;
-export {TaskQueue};
+export {TaskQueue, Task};
 
 type Task<Result> = () => Promise<Result> | Result;
 
@@ -216,8 +216,7 @@ interface EndPromiseResolver extends QueueElementProperty {
     resolve: (value: void | PromiseLike<void>) => void;
 }
 
-interface TaskWrapper<Result> extends QueueElementProperty, QueueElement<Result> {
-}
+type TaskWrapper<Result> = QueueElementProperty & QueueElement<Result>;
 
 interface WrappedPromise<Result> extends Promise<Result> {
     [targetSymbol]?: { [endPromiseResolvers]?: EndPromiseResolver[] };
